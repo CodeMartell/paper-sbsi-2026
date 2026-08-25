@@ -1,0 +1,40 @@
+name: CI - Equipe 04 - Relatórios Administrativos
+
+# Dispara em push/PR para as branches principais do GitFlow.
+on:
+  push:
+    branches: [main, develop, "feature/**", "release/**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Testes automatizados (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Rodar testes (leitura, cruzamento, desvios, divergências, circuit breaker)
+        run: pytest tests/ -v
+
+  build-docker:
+    name: Build da imagem Docker do robô
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Build da imagem (validação do Dockerfile)
+        run: docker build -t equipe04-robo-relatorios:ci .

@@ -1,0 +1,46 @@
+services:
+  # Sistema GERP simulado (item 3 da avaliação) — serve gerp_fake.html e o
+  # CSV de faturamento bruto para o robô "baixar" via navegador.
+  gerp-fake:
+    image: python:3.12-slim
+    container_name: equipe04_gerp_fake
+    working_dir: /site
+    volumes:
+      - ./gerp_fake_server:/site:ro
+    command: ["python", "-m", "http.server", "8000"]
+    ports:
+      - "8000:8000"
+    networks:
+      - equipe04-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/web/gerp_fake.html')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Robô de automação: Extrair -> Tratar -> Cruzar -> Analisar ->
+  # Identificar divergências -> Gerar relatório.
+  robo-relatorios:
+    build: .
+    container_name: equipe04_robo_relatorios
+    depends_on:
+      gerp-fake:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - GERP_URL=http://gerp-fake:8000/web/gerp_fake.html
+      - TZ=America/Manaus
+      - DATA_DIR=/app/data
+      - OUTPUT_DIR=/app/output
+      - LOGS_DIR=/app/logs
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+    networks:
+      - equipe04-net
+
+networks:
+  equipe04-net:
+    driver: bridge

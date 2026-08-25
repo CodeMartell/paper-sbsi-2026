@@ -1,0 +1,7 @@
+<!doctype html><html><head><meta charset="utf-8"><title>GERP Fake</title></head><body>
+<h1>GERP — Relatórios</h1><form onsubmit="login(event)"><input id="u" placeholder="Usuário"><input id="p" type="password" placeholder="Senha"><button>Entrar</button></form>
+<div id="app" style="display:none"><p>Período: 2026-W34</p><button onclick="baixar()">Exportar dados</button>
+<table border="1"><tr><th>Projeto</th><th>Previsto</th><th>Custo</th><th>Horas</th></tr>
+<tr><td>PROJ_REF_01</td><td>500000</td><td>420000</td><td>1200</td></tr><tr><td>PROJ_REF_02</td><td>800000</td><td>850000</td><td>2100</td></tr><tr><td>PROJ_REF_03</td><td>1200000</td><td>1100000</td><td>2800</td></tr></table></div>
+<script>function login(e){e.preventDefault();if(u.value==='aluno'&&p.value==='avaliacao2026'){document.querySelector('form').style.display='none';app.style.display='block'}else alert('Credenciais inválidas')}
+function baixar(){const a=document.createElement('a');a.href='../GERP_faturamento_bruto.csv';a.download='GERP_faturamento_bruto.csv';a.click()}</script></body></html>

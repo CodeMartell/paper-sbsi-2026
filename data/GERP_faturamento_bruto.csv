@@ -1,0 +1,4 @@
+﻿Codigo_Projeto;Faturamento_Previsto;Custo_Realizado;Horas_Faturadas;Status_Financeiro
+PROJ_REF_01;500000;420000;1200;Normal
+PROJ_REF_02;800000;850000;2100;Acima_do_previsto
+PROJ_REF_03;1200000;1100000;2800;Normal

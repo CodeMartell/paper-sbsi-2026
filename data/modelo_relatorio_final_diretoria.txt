@@ -1,0 +1,14 @@
+RELATÓRIO EXECUTIVO SEMANAL — PORTAL FAKE
+Semana: {{SEMANA}}
+
+Resumo:
+{{RESUMO}}
+
+Principais indicadores:
+{{INDICADORES}}
+
+Divergências:
+{{DIVERGENCIAS}}
+
+Recomendação/validação do gestor:
+{{VALIDACAO_HUMANA}}

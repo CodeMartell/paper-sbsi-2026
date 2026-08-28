@@ -11,6 +11,7 @@ Isso cumpre o requisito da avaliação de que o robô "deverá interagir
 com essa interface web local simulada para realizar o login e a
 simulação de download dos dados".
 """
+
 from __future__ import annotations
 
 import logging
@@ -26,7 +27,9 @@ class ExtracaoGERPError(RuntimeError):
     """Erro ao extrair dados do sistema GERP simulado."""
 
 
-def extrair_via_gerp_fake(cfg: Settings = default_settings, logger: logging.Logger | None = None) -> Path:
+def extrair_via_gerp_fake(
+    cfg: Settings = default_settings, logger: logging.Logger | None = None
+) -> Path:
     """Faz login no GERP simulado e captura o download do CSV de faturamento.
 
     Retorna o caminho do arquivo baixado (salvo em cfg.data_dir).
@@ -37,7 +40,7 @@ def extrair_via_gerp_fake(cfg: Settings = default_settings, logger: logging.Logg
     log.info("Iniciando extração via GERP simulado: %s", cfg.gerp_url)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=cfg.headless, slow_mo=0 if cfg.headless else 800)
         page = browser.new_page(accept_downloads=True)
         try:
             page.goto(cfg.gerp_url, wait_until="load", timeout=15000)
@@ -58,7 +61,9 @@ def extrair_via_gerp_fake(cfg: Settings = default_settings, logger: logging.Logg
 
         except PlaywrightTimeoutError as exc:
             log.error("Timeout ao interagir com o GERP simulado: %s", exc)
-            raise ExtracaoGERPError(f"Timeout ao interagir com o GERP simulado: {exc}") from exc
+            raise ExtracaoGERPError(
+                f"Timeout ao interagir com o GERP simulado: {exc}"
+            ) from exc
         finally:
             browser.close()
 
@@ -68,7 +73,9 @@ def extrair_via_gerp_fake(cfg: Settings = default_settings, logger: logging.Logg
     return destino
 
 
-def extrair_com_fallback(cfg: Settings = default_settings, logger: logging.Logger | None = None) -> Path:
+def extrair_com_fallback(
+    cfg: Settings = default_settings, logger: logging.Logger | None = None
+) -> Path:
     """Tenta extrair via automação web protegida por Circuit Breaker; em
     caso de falha (ou circuito aberto), cai para o CSV já fornecido
     localmente (fail-safe), registrando o ocorrido no log.
@@ -106,7 +113,9 @@ def extrair_com_fallback(cfg: Settings = default_settings, logger: logging.Logge
                 exc,
             )
     else:
-        log.info("Circuit breaker impediu nova tentativa de acesso ao GERP; usando fallback local diretamente.")
+        log.info(
+            "Circuit breaker impediu nova tentativa de acesso ao GERP; usando fallback local diretamente."
+        )
 
     if not caminho_local.exists():
         raise ExtracaoGERPError(

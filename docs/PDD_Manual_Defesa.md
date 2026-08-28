@@ -111,10 +111,10 @@ Para garantir que tudo funcione na hora, siga estes passos exatos sem depender d
 
 ### 5. Apresentando o GHCR (A Mágica da Nuvem - Slide 10)
 O professor pede especificamente na Etapa 5 e 6 do documento para demonstrar o `docker pull` da imagem publicada no GHCR.
-- **Onde mostrar:** Abra o seu repositório no GitHub pelo navegador. Vá na aba "Actions" e mostre o job verdinho. Depois, vá na página inicial do repositório, role para baixo e no canto direito em **Packages**, mostre a imagem publicada lá.
+- **Onde mostrar:** Abra o seu repositório no GitHub pelo navegador. Olhe exatamente aí no **canto direito da tela**, onde está escrito **Packages**. Clique onde diz **atividade_avaliativa3** e mostre que a imagem está pública e hospedada lá.
 - **A Conclusão (O que falar):** *"Como configuramos nossa pipeline com permissão de escrita (`packages: write`), nosso GitHub Actions não apenas testa o código, mas realiza o build da imagem Docker e automaticamente faz o push para o GitHub Container Registry. O artefato já está pronto para ir para produção."*
 - **No Terminal (A cartada final):** Abra o terminal e digite ao vivo o comando para provar que a imagem desce da nuvem:
   ```bash
-  docker pull ghcr.io/codemartell/atividade_avaliativa3/equipe04-robo:latest
+  docker pull ghcr.io/codemartell/atividade_avaliativa3:latest
   ```
-  *(Opcional: você pode rodar o `docker run ...` dessa imagem se o professor pedir).*
+  *(Opcional: logo depois do pull, você pode rodar `docker run ghcr.io/codemartell/atividade_avaliativa3:latest` para mostrar o robô rodando direto da nuvem).*

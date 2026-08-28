@@ -13,9 +13,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
+COPY data/ ./data/
 
-# /app/data, /app/output e /app/logs são preenchidos via volumes (docker-compose)
-RUN mkdir -p /app/data /app/output /app/logs \
+# /app/output e /app/logs são preenchidos via volumes (mas garantimos que existam)
+RUN mkdir -p /app/output /app/logs \
     && chown -R robo:robo /app
 
 USER robo

@@ -1,14 +1,14 @@
-# Artefato rastreável para consolidação de dados operacionais: avaliação sintética de qualidade, atualidade e revisão humana
+# Integração rastreável de dados financeiros e de produção por RPA para apoio à decisão organizacional
 
 > **Status:** rascunho de pesquisa, não pronto para submissão. Remover nomes, instituições, URLs identificadoras e referências ao repositório durante a preparação da versão duplamente anônima. Confirmar integralmente a chamada e o template SBC vigente antes de exportar PDF.
 
 ## Structured abstract
 
-**Research Context.** Operational information systems consolidate data from multiple sources to support managerial decisions, but source failures, incomplete fields, duplicates, and uncertainty about the reference period can turn invalid inputs into apparently valid indicators.
+**Research Context.** Organizational information systems integrate data from distinct operational sources to support managerial processes. However, source failures, incomplete fields, duplicates, and uncertainty about the reference period can transform invalid inputs into apparently valid indicators.
 
-**Scientific and/or Practical Problem.** Conventional reconciliation automation may discard, impute, or merge problematic records without making treatment decisions explicit, thereby releasing operational classifications that cannot be independently explained or reproduced.
+**Scientific and/or Practical Problem.** RPA-supported data integration can silently discard, impute, or merge problematic records. This can release financial and production classifications that are not supported by sufficient evidence and cannot be independently explained or reproduced.
 
-**Proposed Solution and/or Analysis.** We designed an extensible local artifact that preserves inputs, associates hashes and temporal metadata with sources, validates schemas and records before business rules, separates data-quality issues from operational classifications, and stores human-review events separately from automatic results.
+**Proposed Solution and/or Analysis.** We designed an RPA artifact for traceable financial and production data integration. It preserves inputs, associates hashes and temporal metadata with sources, validates schemas and records before business rules, separates data-quality issues from operational classifications, and stores human-review events separately from automatic results.
 
 **Related IS Theory.** The study draws on data quality as a multidimensional construct, data provenance, and Design Science Research in Information Systems.
 
@@ -16,67 +16,79 @@
 
 **Summary of Results.** In 54 synthetic base items per enhanced instance, the artifact handled all items according to the oracle and released no silent-error event under the study definition. In the financial/production comparison, the historical implementation handled 39 of 54 base items according to the oracle, missed 27 expected quality alerts, and produced 45 silent-error events. These results apply only to the constructed scenarios.
 
-**Contributions and Impact to IS area.** The work offers a reproducible artifact and evaluation protocol for treating data quality and source freshness as first-class conditions in operational information systems. It also delineates evidence that remains necessary before claims of organizational impact or cross-domain reuse.
+**Contributions and Impact to IS area.** The work offers a reproducible RPA artifact and evaluation protocol for treating data quality and source freshness as first-class conditions in organizational information systems. It delineates the evidence required before claims of organizational impact, decision improvement, or cross-domain reuse.
 
-## 1. Introduction
+## 1. Introdução
 
-Organizations use operational data from heterogeneous sources to produce indicators and exceptions. A calculation can be arithmetically correct while its input is incomplete, duplicated, outdated, or unmatched. If the system converts unknown values to zero, silently removes rows, or performs a join that hides a missing counterpart, the resulting classification can be interpreted as normal even though the evidence is insufficient. This is an information-systems problem because the consequence is not merely a data-processing error: people may use an unsupported output in an organizational procedure.
+Organizações usam dados financeiros e de produção para acompanhar custos, faturamento, planejamento e realização. Em muitos processos, esses dados são produzidos por fontes distintas e precisam ser integrados antes de formar indicadores e exceções para gestores. A Robotic Process Automation (RPA) permite automatizar extração e movimentação dessas informações, mas a automação não torna, por si só, o resultado confiável para uso organizacional.
 
-This work investigates an artifact for traceable operational reconciliation. Its first instance combines financial and production data. To avoid inferring requirements of other author projects, the evaluation adds two explicitly synthetic instances called sourcing and materials; their names are labels for hypothetical schemas only. No meaning of ECOs is assumed or implemented.
+Um cálculo pode estar aritmeticamente correto embora seus dados de entrada estejam incompletos, duplicados, desatualizados ou sem correspondência entre fontes. Se uma automação converte valor desconhecido em zero, elimina registros silenciosamente ou usa uma junção que oculta uma contraparte ausente, a classificação produzida pode parecer normal sem que haja evidência suficiente. Esse risco é organizacional: uma pessoa pode tomar uma decisão ou encerrar uma atividade a partir de informação que o próprio sistema não consegue explicar.
 
-The study asks RQ1, RQ2 and RQ3 as stated in `docs/AVALIACAO_MULTIPROCESSO.md`. It does not claim that the artifact improves human productivity, organizational performance, or decisions in production. Those claims require participants and authorized field data.
+Este artigo apresenta um artefato de RPA para integração rastreável de dados financeiros e de produção. O artefato automatiza a extração de uma fonte financeira simulada, integra-a a uma fonte de produção, valida a qualidade antes de aplicar regras de negócio e apresenta resultados, limitações e evidências para a conferência gerencial. O objetivo não é substituir o julgamento do gestor: é reduzir o risco de uma classificação automática ser interpretada como evidência suficiente quando o dado não permite esse julgamento.
 
-## 2. Background and related work
+As perguntas de pesquisa são:
 
-Data quality is broader than accuracy: consumers evaluate multiple dimensions of whether data are fit for use [Wang and Strong, 1996]. Pipino, Lee and Wang [2002] argue for usable metrics rather than ad hoc quality measures. In this work, required columns, valid keys, parseable finite numbers, duplicate conflict, correspondence, and denominator validity operationalize a limited, explicit quality policy. The policy does not claim to cover all data-quality dimensions.
+- **RQ1.** Em quais condições de falha de entrada a validação explícita impede a liberação de classificações operacionais indevidas?
+- **RQ2.** Como proveniência, hashes e política de atualidade contribuem para a explicabilidade e a reprodução dos resultados de integração financeira e de produção?
+- **RQ3.** Como a versão aprimorada se comporta, nas mesmas entradas sintéticas, em comparação à implementação histórica do fluxo financeiro/produção?
 
-Provenance concerns the lineage and context that make a result inspectable. Simmhan, Plale and Gannon [2005] survey provenance in e-science; Cheney, Chiticariu and Tan [2009] discuss why, how and where provenance is represented in databases. The artifact adapts this concern to a local operational setting by preserving source copies, hashes, source mode, reference interval, configuration and stage durations. A hash detects a change relative to a preserved manifest but does not authenticate origin or make local files immutable.
+O estudo não afirma melhoria de produtividade, redução de custos, melhor decisão humana ou impacto organizacional. Essas conclusões exigem avaliação com participantes e dados autorizados de uma organização. As instanciações sintéticas adicionais existem apenas para examinar a infraestrutura comum; elas não definem requisitos de sourcing, materiais ou ECOs.
 
-Hevner et al. [2004] frame Design Science Research as construction and evaluation of innovative artifacts at the intersection of people, organizations and technology. The artifact is evaluated as a design-science instantiation: it solves a defined problem, has explicit requirements and behavior, and is evaluated against a predeclared oracle. The evaluation is technical and synthetic; it is not a behavioral field study.
+## 2. Fundamentação e trabalhos relacionados
 
-## 3. Artifact design
+A qualidade de dados é mais ampla que precisão: consumidores avaliam diversas dimensões para decidir se os dados são adequados ao uso [Wang e Strong, 1996]. Pipino, Lee e Wang [2002] defendem métricas úteis às organizações, em vez de medidas criadas apenas ad hoc. Neste trabalho, colunas obrigatórias, chaves válidas, números finitos conversíveis, duplicatas, correspondência entre fontes e denominadores válidos operacionalizam uma política limitada e explícita de qualidade. A política não pretende cobrir todas as dimensões de qualidade de dados.
 
-The artifact organizes a run into configuration, acquisition, validation, analysis and reporting. It assigns a UUID, preserves inputs and their hashes, records a policy and code identity, and writes manifest/result artifacts. The quality gate runs before business analysis. Missing schema, empty source and no eligible pairs block the run. Invalid keys, unknown/non-finite numbers, missing required text, denominator zero, conflicting duplicates and unmatched records create decisions and retain original values in the ledger. Depending on policy, a run with quality issues can be provisional or blocked.
+Proveniência trata da linhagem e do contexto que tornam um resultado inspecionável. Simmhan, Plale e Gannon [2005] discutem proveniência em dados científicos; Cheney, Chiticariu e Tan [2009] tratam de por que, como e onde representá-la em bases de dados. O artefato adapta essa preocupação a um contexto organizacional local ao preservar cópias das fontes, hashes, modo de obtenção, intervalo de referência, configuração e duração das etapas. Um hash detecta alteração em relação ao manifesto preservado, mas não autentica a origem nem torna arquivos locais imutáveis.
 
-Freshness uses a reference interval, not the file modification timestamp. A sidecar metadata file binds `obtained_at`, `reference_start`, `reference_end` and the reference basis to the source hash. A current download of an old reference period remains stale. Unknown temporal evidence produces an explicit `unknown` state. The report, JSON and dashboard expose these states.
+Hevner et al. [2004] apresentam Design Science Research como construção e avaliação de artefatos inovadores na interseção entre pessoas, organizações e tecnologia. O artefato é avaliado como uma instanciação de Design Science: responde a um problema definido, explicita requisitos e comportamento e é avaliado contra um oráculo predefinido. A avaliação é técnica e sintética; não é estudo comportamental ou de campo.
 
-The dashboard reads stored results rather than recalculating business rules. A reviewer may record pending, confirmed or discarded events with a justification and self-declared identity. This is a local, append-only application history, not authentication, a digital signature or a tamper-proof audit trail.
+## 3. Artefato de RPA para integração organizacional
 
-Two extension points are used in the evaluation: a schema declares key, numeric, text and denominator fields; a process declares loaders, rules and report rendering. Financial/production remains the original business-specific instance. The new instances use their own labels and rule parameters, but share quality, provenance, policy, preservation and review infrastructure.
+O artefato organiza cada execução em configuração, aquisição, validação, análise e relatório. A RPA acessa o GERP simulado por Playwright, realiza login e obtém o CSV financeiro. Em caso de indisponibilidade, usa o fallback existente com circuit breaker. A fonte de produção é lida de planilha local. Cada execução recebe UUID, preserva as entradas e seus hashes, registra política e identidade do código e gera manifesto e resultado estruturado.
 
-## 4. Method
+A porta de qualidade é executada antes das regras financeiras e de produção. Esquema ausente, fonte vazia e ausência de pares elegíveis bloqueiam a execução. Chaves inválidas, números desconhecidos ou não finitos, texto obrigatório ausente, denominador zero, duplicatas conflitantes e registros sem correspondência geram decisões explícitas e preservam os valores originais no ledger. Conforme a política, a execução com problemas pode ser provisória ou bloqueada.
 
-The study uses controlled synthetic evaluation. Each instance contains three synthetic identifiers. The normal case produces two normal records and one critical record. Five fault conditions alter one input: invalid numeric value, missing key, conflicting duplicate, unmatched record, or zero denominator. The expected quality events and eligible classifications are defined in code before execution. Each condition is executed three times.
+A atualidade usa intervalo de referência, não a data de modificação do arquivo. Um metadado lateral associa `obtained_at`, `reference_start`, `reference_end` e a base da referência ao hash da fonte. Um download atual de período antigo continua desatualizado. Evidência temporal ausente produz o estado explícito `unknown`. Relatório textual, JSON e dashboard apresentam essas condições ao gestor.
 
-The primary measures are correctly handled base items, true/false/missed quality alerts, incorrect operational classifications released and silent-error events. A base item is correctly handled if it receives the expected label when eligible or is withheld when the oracle requires withholding. A silent-error event is an incorrect released classification plus a missed expected quality event when the run releases output. It is an event count, not a probability or a count of people affected.
+O dashboard consome resultados armazenados, sem recalcular regras financeiras ou de produção. Ele apresenta fontes, atualidade, divergências operacionais, problemas de qualidade, valores utilizados e decisões de tratamento. Um revisor pode registrar ocorrência pendente, confirmada ou descartada com justificativa e identidade autodeclarada. Isso é histórico local de aplicação, não autenticação, assinatura digital ou trilha inviolável.
 
-For RQ3, the runner loads the historical `data_processor.py` from commit `7e1768daf5d4081450ee5d6e904c8c0d3a5a983d` via Git and applies it to the equivalent financial/production DataFrames. The original version has no quality-event model; its detected-quality set is therefore empty. The comparison is limited to this historical process instance. The two synthetic extensions have no baseline because they did not exist in the original repository.
+Dois pontos de extensão são usados na avaliação: um esquema declara chave, campos numéricos, campos textuais e denominadores; um processo declara leitores, regras e geração de relatório. Finanças/produção permanece a instância específica de negócio original. As novas instâncias usam rótulos e parâmetros próprios, mas compartilham infraestrutura de qualidade, proveniência, política, preservação e revisão.
 
-## 5. Results
+## 4. Método de avaliação
 
-Across 18 enhanced runs for each process instance (six conditions × three repetitions), the enhanced artifact handled 54 of 54 base items as specified. It identified 27 expected quality events, reported no false or missed alert and released zero silent-error event for each instance. Normal cases completed; fault cases became provisional under the configured partial-quality policy.
+O estudo usa avaliação controlada com dados sintéticos claramente identificados. A instanciação financeira/produção contém três projetos sintéticos. O cenário normal produz dois projetos normais e um crítico segundo as regras existentes. Cinco condições de falha alteram uma entrada: número inválido, chave ausente, duplicata conflitante, registro sem correspondência e denominador zero. Os eventos de qualidade e as classificações elegíveis esperadas são definidos no código antes de qualquer execução. Cada condição é executada três vezes.
 
-In financial/production, the historical version handled 39 of 54 base items according to the synthetic oracle. It exposed no structured quality alert, missed 27 expected quality events, released 15 classifications that the oracle would withhold, and therefore accumulated 45 silent-error events under the stated definition. These differences arise in the fault conditions; both versions handle the normal synthetic case as expected.
+As métricas são itens-base tratados corretamente, alertas de qualidade verdadeiros/falsos/perdidos, classificações operacionais indevidas liberadas e eventos de erro silencioso. Um item-base é tratado corretamente quando recebe a classificação esperada, se elegível, ou é retido quando o oráculo exige retenção. Evento de erro silencioso é a soma de uma classificação incorreta liberada e de um problema de qualidade esperado que não foi detectado em execução que libera saída. É contagem de eventos, não probabilidade ou número de pessoas afetadas.
 
-The result supports RQ1 for the defined fault set: explicit validation prevents classifications from being released for affected inputs. It supports RQ2 only as a demonstration that common infrastructure executes with two altered schemas/rule labels. It supports RQ3 as a historical technical comparison, not as an organizational impact comparison.
+Para a RQ3, o executor carrega via Git o `data_processor.py` histórico do commit `7e1768daf5d4081450ee5d6e904c8c0d3a5a983d` e o aplica aos DataFrames financeiros e de produção equivalentes. A versão original não possui modelo de evento de qualidade; seu conjunto de problemas detectados é, portanto, vazio. A comparação limita-se a essa instância histórica. As duas extensões sintéticas não possuem baseline porque não existiam no repositório original.
 
-## 6. Discussion
+## 5. Resultados
 
-The salient design decision is separating quality from operations. A missing counterpart is not treated as a zero quantity; a denominator equal to zero does not yield a zero percent deviation; a conflicting duplicate is not resolved by retaining an arbitrary row. These choices may be conservative. An organization can set a blocking policy, but must validate its own semantics, acceptable age, exceptions and escalation procedure.
+Em 18 execuções da versão aprimorada para cada instância de processo (seis condições × três repetições), o artefato tratou os 54 de 54 itens-base conforme especificado. Ele identificou 27 eventos de qualidade esperados, não reportou alerta falso ou perdido e não liberou evento de erro silencioso em cada instância. Casos normais foram concluídos; casos com falha tornaram-se provisórios sob a política configurada de qualidade parcial.
 
-The result also illustrates a boundary for claims about emerging technologies. The contribution is not novelty from a fashionable tool. It is the engineered composition of validation, provenance, freshness policy, reproducibility and review in an operational information-system artifact. This speaks to technological transparency and accountability, data/information management and organizational IS. The theme “Tecnologias emergentes aplicadas a sistemas de informação” should only be selected if the final paper explains this contribution as a current technical approach rather than equating programming libraries with scientific novelty.
+Em finanças/produção, a versão histórica tratou 39 dos 54 itens-base conforme o oráculo sintético. Ela não expôs alerta estruturado de qualidade, deixou de detectar 27 eventos esperados, liberou 15 classificações que o oráculo reteria e, portanto, acumulou 45 eventos de erro silencioso na definição adotada. Essas diferenças surgem nas condições de falha; ambas as versões tratam o caso sintético normal conforme esperado.
 
-## 7. Threats to validity and ethics
+O resultado apoia a RQ1 para o conjunto de falhas definido: a validação explícita impede que classificações sejam liberadas para entradas afetadas. Ele apoia a RQ2 apenas como demonstração de que a infraestrutura comum executa com dois esquemas e rótulos de regras alterados. Ele apoia a RQ3 como comparação técnica histórica, não como comparação de impacto organizacional.
 
-All scenarios and their oracle were created by the development team; they are small and cannot represent enterprise distributions or human work. Repetition chiefly detects execution instability. It does not support hypothesis testing or a claim of universal reliability. The baseline executes historical code under current runtime dependencies. The paper must identify this fact.
+## 6. Discussão para Sistemas de Informação Organizacionais
 
-No personal or enterprise data were used. Future manual or manager evaluation requires informed procedures appropriate to the institution and organization. Inputs preserved by the artifact can contain sensitive data in a real deployment, so access and retention must be defined. The system lacks authentication, nonrepudiation, immutable storage and concurrency coordination.
+A principal decisão de projeto é separar qualidade de dados e classificação operacional. Uma contraparte ausente não é tratada como quantidade zero; denominador zero não resulta em desvio percentual zero; duplicata conflitante não é resolvida pela retenção arbitrária de uma linha. Essas escolhas são conservadoras e fazem sentido quando a integração alimenta procedimentos organizacionais. Contudo, cada organização deve validar semântica dos indicadores, idade aceitável dos dados, exceções e regras de escalonamento.
 
-## 8. Conclusion and future work
+O RPA é o mecanismo técnico de extração e integração, mas a contribuição do artefato para Sistemas de Informação Organizacionais está no apoio à decisão: torna visível quais dados foram usados, quais foram retidos, qual período é representado, quais regras foram aplicadas e onde é necessário julgamento humano. Assim, o resultado entregue ao gestor não é apenas um indicador; é uma informação contextualizada, com limites explícitos para seu uso.
 
-The study presents a reproducible artifact that makes quality failures, temporal uncertainty and operational rules visible as different classes of evidence. The synthetic experiment shows that the artifact follows its predeclared handling policy in three controlled instances and avoids the silent-error events observed in the frozen financial/production baseline. The result is a technical proof of behavior under explicit conditions, not proof of organizational benefit.
+O trabalho pode dialogar com o tema “Tecnologias emergentes aplicadas a sistemas de informação”, mas não deve justificar sua novidade apenas pelo uso de bibliotecas ou dashboard. A contribuição reside na composição de RPA, validação, proveniência, política de atualidade, reprodutibilidade e revisão humana em um artefato de SI organizacional.
 
-Next steps are a systematic literature review, validation of process semantics with responsible stakeholders, implementation of independently specified process instances, a human comparison on equivalent inputs, and deployment-oriented controls for access, retention and provenance authenticity.
+## 7. Ameaças à validade e aspectos éticos
+
+Todos os cenários e seu oráculo foram criados pela equipe de desenvolvimento; são pequenos e não representam distribuições empresariais ou trabalho humano. A repetição detecta principalmente instabilidade de execução. Ela não sustenta teste de hipótese ou alegação de confiabilidade universal. A baseline executa código histórico sob dependências atuais; o artigo deve identificar esse fato.
+
+Nenhum dado pessoal ou empresarial foi usado. Uma futura avaliação manual ou com gestores exige procedimentos apropriados à instituição e à organização. Entradas preservadas pelo artefato podem conter dados sensíveis em implantação real; acesso e retenção devem ser definidos. O sistema não possui autenticação, não repúdio, armazenamento imutável ou coordenação de concorrência.
+
+## 8. Conclusão e trabalhos futuros
+
+O estudo apresenta um artefato de RPA reproduzível para integração rastreável de dados financeiros e de produção voltada ao apoio à decisão organizacional. O experimento sintético mostra que o artefato segue a política de tratamento predefinida nas condições controladas e evita os eventos de erro silencioso observados na baseline congelada de finanças/produção. O resultado é evidência técnica de comportamento sob condições explícitas, não prova de benefício organizacional.
+
+Os próximos passos são revisão sistemática da literatura, validação da semântica do processo com responsáveis, implementação de instâncias especificadas independentemente, comparação humana com entradas equivalentes e controles de acesso, retenção e autenticidade de proveniência voltados à implantação.
 
 ## References
 

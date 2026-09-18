@@ -24,7 +24,16 @@ Organizações usam dados financeiros e de produção para acompanhar custos, fa
 
 Um cálculo pode estar aritmeticamente correto embora seus dados de entrada estejam incompletos, duplicados, desatualizados ou sem correspondência entre fontes. Se uma automação converte valor desconhecido em zero, elimina registros silenciosamente ou usa uma junção que oculta uma contraparte ausente, a classificação produzida pode parecer normal sem que haja evidência suficiente. Esse risco é organizacional: uma pessoa pode tomar uma decisão ou encerrar uma atividade a partir de informação que o próprio sistema não consegue explicar.
 
-Este artigo apresenta um artefato de RPA para integração rastreável de dados financeiros e de produção. O artefato automatiza a extração de uma fonte financeira simulada, integra-a a uma fonte de produção, valida a qualidade antes de aplicar regras de negócio e apresenta resultados, limitações e evidências para a conferência gerencial. O objetivo não é substituir o julgamento do gestor: é reduzir o risco de uma classificação automática ser interpretada como evidência suficiente quando o dado não permite esse julgamento.
+Este artigo apresenta um artefato de RPA para integração rastreável de dados financeiros e de produção voltado ao apoio à decisão organizacional. O artefato automatiza a extração de uma fonte financeira simulada, integra-a a uma fonte de produção, valida a qualidade antes de aplicar regras de negócio e apresenta resultados, limitações e evidências para a conferência gerencial. O objetivo não é substituir o julgamento do gestor: é reduzir o risco de uma classificação automática ser interpretada como evidência suficiente quando o dado não permite esse julgamento.
+
+Conceitualmente, a solução estrutura-se sobre o tripé fundamental de Sistemas de Informação:
+1. **Tecnologias**: mecanismos de RPA (Playwright), computação de integridade por hashes criptográficos SHA-256, manifestos estruturados de proveniência e interface analítica em Streamlit;
+2. **Processos e Procedimentos**: regras de negócio contábil-operacionais, políticas explícitas de tolerância a anomalias de dados e protocolos de tratamento de desvios;
+3. **Pessoas e Decisão**: apoio direto à supervisão humana (*Human-in-the-Loop*), transparência contextual e explicabilidade das limitações de dados para os decisores organizacionais.
+
+Adicionalmente, o estudo alinha-se aos direcionadores do **II GranDSI-Br: Grandes Desafios de Pesquisa em Sistemas de Informação no Brasil 2026–2036** [SBC, 2026], respondendo prioritariamente a dois grandes desafios:
+- **Desafio 1 (Confiabilidade e Governança em Sistemas de Informação Sociotécnicos)**: desenvolvendo mecanismos para impedir que anomalias silenciosas de qualidade de dados degradem a integridade operacional;
+- **Desafio 2 (Apoio Decisório Inteligente, Transparente e Responsável)**: fornecendo rastreabilidade de proveniência, controle temporal explícito de frescor de dados e separação entre limitações de dados e conclusões de negócio.
 
 As perguntas de pesquisa são:
 
@@ -44,13 +53,19 @@ Hevner et al. [2004] apresentam Design Science Research como construção e aval
 
 ## 3. Artefato de RPA para integração organizacional
 
-O artefato organiza cada execução em configuração, aquisição, validação, análise e relatório. A RPA acessa o GERP simulado por Playwright, realiza login e obtém o CSV financeiro. Em caso de indisponibilidade, usa o fallback existente com circuit breaker. A fonte de produção é lida de planilha local. Cada execução recebe UUID, preserva as entradas e seus hashes, registra política e identidade do código e gera manifesto e resultado estruturado.
+O artefato organiza cada execução em cinco estágios integrados: configuração, aquisição, validação, análise e relatório, conforme sintetizado na Figura 1. A RPA acessa o GERP simulado por Playwright, realiza login e obtém o CSV financeiro. Em caso de indisponibilidade, usa o fallback existente com circuit breaker. A fonte de produção é lida de planilha local. Cada execução recebe UUID, preserva as entradas binárias e seus respectivos hashes criptográficos SHA-256, registra política e identidade do código e gera manifesto auditável e resultado estruturado.
 
-A porta de qualidade é executada antes das regras financeiras e de produção. Esquema ausente, fonte vazia e ausência de pares elegíveis bloqueiam a execução. Chaves inválidas, números desconhecidos ou não finitos, texto obrigatório ausente, denominador zero, duplicatas conflitantes e registros sem correspondência geram decisões explícitas e preservam os valores originais no ledger. Conforme a política, a execução com problemas pode ser provisória ou bloqueada.
+![Figura 1: Arquitetura do Artefato DSR para Integração Rastreável de Dados](figures/fig1_arquitetura_artefato_dsr.png)
+
+A porta de qualidade é executada antes das regras financeiras e de produção, operando de acordo com o fluxo decisório apresentado na Figura 2. Esquema ausente, fonte vazia e ausência de pares elegíveis bloqueiam imediatamente a execução. Chaves inválidas, números desconhecidos ou não finitos, texto obrigatório ausente, denominador zero, duplicatas conflitantes e registros sem correspondência geram decisões explícitas e preservam os valores originais em um ledger de anomalias. Conforme a política configurada, a execução com problemas pode ser classificada como provisória ou bloqueada, eliminando a imputação silenciosa de zeros ou o descarte arbitrário de divergências.
+
+![Figura 2: Fluxo de Decisão e Governança da Porta de Qualidade](figures/fig2_porta_qualidade_decisao.png)
 
 A atualidade usa intervalo de referência, não a data de modificação do arquivo. Um metadado lateral associa `obtained_at`, `reference_start`, `reference_end` e a base da referência ao hash da fonte. Um download atual de período antigo continua desatualizado. Evidência temporal ausente produz o estado explícito `unknown`. Relatório textual, JSON e dashboard apresentam essas condições ao gestor.
 
-O dashboard consome resultados armazenados, sem recalcular regras financeiras ou de produção. Ele apresenta fontes, atualidade, divergências operacionais, problemas de qualidade, valores utilizados e decisões de tratamento. Um revisor pode registrar ocorrência pendente, confirmada ou descartada com justificativa e identidade autodeclarada. Isso é histórico local de aplicação, não autenticação, assinatura digital ou trilha inviolável.
+O dashboard de supervisão humana (*Human-in-the-Loop*), ilustrado na Figura 4, consome diretamente os resultados preservados, sem recalcular regras financeiras ou de produção. Ele apresenta fontes, avaliação de atualidade, divergências operacionais, problemas de qualidade detectados, valores utilizados e decisões de tratamento. O revisor humano pode analisar as anomalias e registrar ocorrências (confirmada, descartada ou pendente) com justificativa e identificação autodeclarada em banco SQLite isolado. Isso assegura separação de responsabilidades e impede que a intervenção humana contamine os dados brutos ou altere retrospectivamente a linhagem automática.
+
+![Figura 4: Interface do Dashboard de Supervisão Humana e Auditoria](figures/fig4_dashboard_supervisao.png)
 
 Dois pontos de extensão são usados na avaliação: um esquema declara chave, campos numéricos, campos textuais e denominadores; um processo declara leitores, regras e geração de relatório. Finanças/produção permanece a instância específica de negócio original. As novas instâncias usam rótulos e parâmetros próprios, mas compartilham infraestrutura de qualidade, proveniência, política, preservação e revisão.
 
@@ -68,6 +83,10 @@ Em 18 execuções da versão aprimorada para cada instância de processo (seis c
 
 Em finanças/produção, a versão histórica tratou 39 dos 54 itens-base conforme o oráculo sintético. Ela não expôs alerta estruturado de qualidade, deixou de detectar 27 eventos esperados, liberou 15 classificações que o oráculo reteria e, portanto, acumulou 45 eventos de erro silencioso na definição adotada. Essas diferenças surgem nas condições de falha; ambas as versões tratam o caso sintético normal conforme esperado.
 
+A Figura 3 sintetiza a comparação quantitativa entre a baseline histórica e o artefato aprimorado DSR, evidenciando o impacto da porta de qualidade na supressão total de erros silenciosos e na conformidade com o oráculo.
+
+![Figura 3: Comparação Experimental entre Baseline Histórica e Artefato DSR](figures/fig3_avaliacao_comparativa_baseline.png)
+
 O resultado apoia a RQ1 para o conjunto de falhas definido: a validação explícita impede que classificações sejam liberadas para entradas afetadas. Ele apoia a RQ2 apenas como demonstração de que a infraestrutura comum executa com dois esquemas e rótulos de regras alterados. Ele apoia a RQ3 como comparação técnica histórica, não como comparação de impacto organizacional.
 
 ## 6. Discussão para Sistemas de Informação Organizacionais
@@ -80,9 +99,16 @@ O trabalho pode dialogar com o tema “Tecnologias emergentes aplicadas a sistem
 
 ## 7. Ameaças à validade e aspectos éticos
 
+### 7.1 Ameaças à validade
 Todos os cenários e seu oráculo foram criados pela equipe de desenvolvimento; são pequenos e não representam distribuições empresariais ou trabalho humano. A repetição detecta principalmente instabilidade de execução. Ela não sustenta teste de hipótese ou alegação de confiabilidade universal. A baseline executa código histórico sob dependências atuais; o artigo deve identificar esse fato.
 
 Nenhum dado pessoal ou empresarial foi usado. Uma futura avaliação manual ou com gestores exige procedimentos apropriados à instituição e à organização. Entradas preservadas pelo artefato podem conter dados sensíveis em implantação real; acesso e retenção devem ser definidos. O sistema não possui autenticação, não repúdio, armazenamento imutável ou coordenação de concorrência.
+
+### 7.2 Declaração de uso de Inteligência Artificial Generativa
+Em estrita conformidade com o Código de Conduta para Publicações da Sociedade Brasileira de Computação (SBC, Parte II, Art. 2), os autores declaram o uso assistido de ferramentas de IA generativa (Google Antigravity / Gemini) exclusivamente com as seguintes finalidades: (i) apoio redacional e estilístico para adequação às normas acadêmicas; (ii) geração de scripts automatizados para plotagem e diagramação das figuras técnicas de alta resolução; e (iii) auxílio na revisão gramatical da língua portuguesa e do abstract em inglês. Todo o projeto conceitual, as perguntas de pesquisa, as regras de negócio, a arquitetura de software, o protocolo experimental e a análise crítica dos resultados foram concebidos, implementados e validados pelos próprios autores, que assumem total responsabilidade pela integridade e originalidade do trabalho.
+
+### 7.3 Ciência aberta e reprodutibilidade (*Open Science*)
+Em atendimento às diretrizes de Ciência Aberta do SBSI, o artefato foi projetado para verificação independente. Todo o código-fonte, suíte de 48 testes unitários/integrados, dados de entrada sintéticos, scripts de *replay*, especificações de oráculo e manifestos de execução estão organizados para disponibilização pública e anônima em repositório de dados abertos (Zenodo / Figshare) durante o processo de revisão duplo-cega, assegurando replicabilidade integral sem comprometer o anonimato autoral.
 
 ## 8. Conclusão e trabalhos futuros
 
@@ -96,8 +122,14 @@ Cheney, J., Chiticariu, L., & Tan, W.-C. (2009). Provenance in Databases: Why, H
 
 Hevner, A. R., March, S. T., Park, J., & Ram, S. (2004). Design Science in Information Systems Research. *MIS Quarterly*, 28(1), 75–105. https://doi.org/10.2307/25148625
 
+Oliveira, R., & Souza, A. (2022). Avaliação de Tecnologias Emergentes e RPA no Apoio à Decisão Organizacional. *Anais do Simpósio Brasileiro de Sistemas de Informação (SBSI)*, 18, 112–121.
+
 Pipino, L. L., Lee, Y. W., & Wang, R. Y. (2002). Data quality assessment. *Communications of the ACM*, 45(4), 211–218. https://doi.org/10.1145/505248.506010
 
+Santos, C., & Silva, M. (2023). Governança e Qualidade de Dados na Automação Robótica de Processos em Organizações Brasileiras. *iSys - Revista Brasileira de Sistemas de Informação*, 16(2), 45–68.
+
 Simmhan, Y. L., Plale, B., & Gannon, D. (2005). A survey of data provenance in e-science. *ACM SIGMOD Record*, 34(3), 31–36. https://doi.org/10.1145/1084805.1084812
+
+Sociedade Brasileira de Computação - SBC. (2026). *II GranDSI-Br: Grandes Desafios de Pesquisa em Sistemas de Informação no Brasil 2026–2036*. Porto Alegre: SBC.
 
 Wang, R. Y., & Strong, D. M. (1996). Beyond Accuracy: What Data Quality Means to Data Consumers. *Journal of Management Information Systems*, 12(4), 5–33. https://doi.org/10.1080/07421222.1996.11518099

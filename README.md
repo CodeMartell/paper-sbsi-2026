@@ -1,8 +1,10 @@
-# Evolução do protótipo de relatórios administrativos
+# Integração Rastreável de Dados Financeiros e de Produção por RPA para Apoio à Decisão Organizacional
 
-Automação local em Python: extração do GERP simulado → preservação de entradas → validação → cruzamento → regras financeiras/produção → relatório textual e JSON → conferência e revisão humana no Streamlit.
+Repositório do artefato de pesquisa desenvolvido sob a metodologia *Design Science Research* (DSR) voltado ao Simpósio Brasileiro de Sistemas de Informação (SBSI).
 
-O projeto é um protótipo para investigação. Resultados sintéticos não demonstram impacto empresarial nem reutilização nos outros projetos dos autores. Nenhum significado de ECOs foi presumido.
+Automação local em Python: extração do GERP simulado → preservação de integridade de entradas (hashes SHA-256) → validação por porta de qualidade → cruzamento rastreável → regras financeiras/produção → relatório textual e JSON com manifesto → conferência e revisão humana supervisionada no Streamlit.
+
+O projeto é um protótipo experimental para investigação em Sistemas de Informação Organizacionais. Resultados sintéticos caracterizam o comportamento técnico nas condições controladas do protocolo e não constituem estudo de campo com dados empresariais reais.
 
 ## Instalar e demonstrar
 
@@ -84,8 +86,8 @@ docker compose --profile dashboard up --build dashboard
 
 O dashboard fica vinculado a `127.0.0.1:8501`. O robô usa Chromium headless e os volumes locais `data`, `output` e `logs`. Para replay: `docker compose run --rm robo-relatorios --replay /app/output/runs/ID`. Garanta permissão de escrita dos volumes para o usuário `robo` (também para `reviews.sqlite`). A imagem mantém a base Playwright original e acrescenta a configuração e Streamlit.
 
-## Referência original e limites
+## Baseline histórica e limitações do artefato
 
-A referência original está em [BASELINE.json](docs/BASELINE.json), commit `7e1768daf5d4081450ee5d6e904c8c0d3a5a983d`; o histórico foi preservado. A pasta local estava vazia, com Git sem commits; o código foi obtido do remoto informado. A inspeção confirmou Playwright, pandas, fallback, circuit breaker, testes e relatório; não encontrou validação explícita, controle temporal, dashboard ou histórico de revisões. Documentos antigos em `docs/` descrevem a atividade original e não são evidência das novas capacidades.
+A referência histórica da baseline está registrada em [BASELINE.json](docs/BASELINE.json), correspondente ao commit `7e1768daf5d4081450ee5d6e904c8c0d3a5a983d`, preservada para replicação da avaliação comparativa. A inspeção da versão inicial confirmou a presença da extração básica com Playwright, pandas, fallback e circuit breaker; a versão original não possuía validação explícita por porta de qualidade, controle de metadados temporais, dashboard de supervisão humana ou histórico rastreável de revisões.
 
 Revisões são locais, sem autenticação, assinatura digital ou proteção contra edição dos arquivos por seu proprietário. Hashes detectam alterações quando comparados com o manifesto preservado, mas não garantem origem autêntica nem inviolabilidade. O armazenamento inclui dados de entrada: controle acesso e retenção conforme o contexto. A extração/circuit breaker pressupõe um escritor por diretório de dados; o histórico SQLite suporta transações locais. Não foi implementado agendador, ML, nuvem, e-mail ou serviço pago.

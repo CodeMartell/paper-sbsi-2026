@@ -14,6 +14,8 @@ from src.data_processor import ProjetoAnalisado
 
 
 def _fmt_moeda(valor: float) -> str:
+    if valor is None:
+        return "desconhecido"
     texto = f"R$ {valor:,.2f}"
     return texto.replace(",", "X").replace(".", ",").replace("X", ".")
 
@@ -22,7 +24,7 @@ def montar_resumo(projetos: List[ProjetoAnalisado]) -> str:
     total = len(projetos)
     criticos = sum(1 for p in projetos if p.classificacao == "CRITICO")
     atencao = sum(1 for p in projetos if p.classificacao == "ATENCAO")
-    normais = total - criticos - atencao
+    normais = sum(1 for p in projetos if p.classificacao == "NORMAL")
     return (
         f"Foram analisados {total} projeto(s) cruzando dados financeiros (GERP) "
         f"e dados de produção física real. Resultado da classificação: "
@@ -33,6 +35,9 @@ def montar_resumo(projetos: List[ProjetoAnalisado]) -> str:
 def montar_indicadores(projetos: List[ProjetoAnalisado]) -> str:
     linhas = []
     for p in projetos:
+        if p.classificacao == "DADOS_INVALIDOS":
+            linhas.append(f"- {p.codigo_projeto}: indicadores não calculados — {p.motivo}")
+            continue
         linhas.append(
             f"- {p.codigo_projeto}: previsto {_fmt_moeda(p.faturamento_previsto)} | "
             f"custo {_fmt_moeda(p.custo_realizado)} | desvio financeiro "
@@ -60,7 +65,7 @@ def montar_validacao_humana(projetos: List[ProjetoAnalisado]) -> str:
         return (
             "Recomenda-se validação do gestor responsável antes do fechamento contábil, "
             f"com atenção prioritária aos projetos críticos: {', '.join(criticos)}. "
-            "Pendente de assinatura/validação humana."
+            "Pendente de revisão humana local (responsável autodeclarado)."
         )
     return "Sem ocorrências críticas no período. Pendente de validação/ciência do gestor."
 
@@ -70,11 +75,12 @@ def gerar_relatorio(
     projetos: List[ProjetoAnalisado],
     output_path: Path,
     tz: str = "America/Manaus",
+    reference_period: str | None = None,
 ) -> Path:
     template = template_path.read_text(encoding="utf-8")
 
     agora = datetime.now(ZoneInfo(tz))
-    semana = agora.strftime("%Y-W%V")
+    semana = reference_period or (agora.strftime("%G-W%V") + " (semana de emissão; referência dos dados não informada)")
 
     conteudo = (
         template.replace("{{SEMANA}}", semana)

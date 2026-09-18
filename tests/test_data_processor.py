@@ -105,5 +105,6 @@ def test_projeto_sem_dados_de_producao_gera_divergencia_de_integracao(df_finance
     cruzado = cruzar_dados(fin, prod)
     resultados = {p.codigo_projeto: p for p in analisar_e_identificar_divergencias(cruzado, Settings())}
 
-    assert resultados["PROJ_REF_01"].classificacao == "ATENCAO"
+    assert resultados["PROJ_REF_01"].classificacao == "DADOS_INVALIDOS"
+    assert resultados["PROJ_REF_01"].desvio_producao_pct is None
     assert "produção" in resultados["PROJ_REF_01"].motivo.lower()

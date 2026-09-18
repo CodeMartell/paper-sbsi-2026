@@ -1,0 +1,167 @@
+{
+  "synthetic": true,
+  "scenarios": {
+    "normal": [
+      "completed",
+      [],
+      [],
+      false
+    ],
+    "source_unavailable": [
+      "completed",
+      [],
+      [],
+      true
+    ],
+    "stale_contingency": [
+      "provisional",
+      [],
+      [],
+      true
+    ],
+    "unknown_contingency": [
+      "provisional",
+      [],
+      [],
+      true
+    ],
+    "missing_column": [
+      "blocked",
+      [
+        [
+          "finance",
+          "missing_column",
+          null,
+          "Horas_Faturadas"
+        ],
+        [
+          "production",
+          "unmatched",
+          "SYN01",
+          null
+        ],
+        [
+          "production",
+          "unmatched",
+          "SYN02",
+          null
+        ],
+        [
+          "production",
+          "unmatched",
+          "SYN03",
+          null
+        ]
+      ],
+      [
+        "SYN01",
+        "SYN02",
+        "SYN03"
+      ],
+      false
+    ],
+    "invalid_numeric": [
+      "provisional",
+      [
+        [
+          "finance",
+          "invalid_numeric",
+          "SYN01",
+          "Custo_Realizado"
+        ],
+        [
+          "production",
+          "unmatched",
+          "SYN01",
+          null
+        ]
+      ],
+      [
+        "SYN01"
+      ],
+      false
+    ],
+    "missing_key": [
+      "provisional",
+      [
+        [
+          "finance",
+          "invalid_key",
+          null,
+          "Codigo_Projeto"
+        ],
+        [
+          "production",
+          "unmatched",
+          "SYN01",
+          null
+        ]
+      ],
+      [
+        "SYN01"
+      ],
+      false
+    ],
+    "conflicting_duplicates": [
+      "provisional",
+      [
+        [
+          "finance",
+          "conflicting_duplicate",
+          "SYN01",
+          null
+        ],
+        [
+          "production",
+          "unmatched",
+          "SYN01",
+          null
+        ]
+      ],
+      [
+        "SYN01"
+      ],
+      false
+    ],
+    "unmatched": [
+      "provisional",
+      [
+        [
+          "finance",
+          "unmatched",
+          "SYN01",
+          null
+        ]
+      ],
+      [
+        "SYN01"
+      ],
+      false
+    ],
+    "zero_denominator": [
+      "provisional",
+      [
+        [
+          "finance",
+          "zero_denominator",
+          "SYN01",
+          "Faturamento_Previsto"
+        ],
+        [
+          "production",
+          "unmatched",
+          "SYN01",
+          null
+        ]
+      ],
+      [
+        "SYN01"
+      ],
+      false
+    ]
+  },
+  "repetitions": 3,
+  "created_at": "2026-09-18T18:43:15.838439+00:00",
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26200-SP0"
+}

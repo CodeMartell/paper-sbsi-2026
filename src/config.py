@@ -27,7 +27,7 @@ class Settings:
     # Sistema GERP simulado
     gerp_url: str = field(
         default_factory=lambda: os.getenv(
-            "GERP_URL", "http://localhost:8000/gerp_fake.html"
+            "GERP_URL", "http://localhost:8000/web/gerp_fake.html"
         )
     )
     gerp_user: str = field(default_factory=lambda: os.getenv("GERP_USER", "aluno"))

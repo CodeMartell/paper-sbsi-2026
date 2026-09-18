@@ -1,0 +1,7 @@
+{
+  "synthetic": true,
+  "experiment_directory": "output\\experiments\\a90df7feda974194afa8b74ca0062c71",
+  "browser_directory": "output/browser-verification/6e534bd3f8504474889b4786c87b11b1",
+  "test_command": "python -m pytest -q --basetemp=output/pytest-session-3",
+  "test_result": "46 passed in 3.16s"
+}

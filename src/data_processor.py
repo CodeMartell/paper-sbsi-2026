@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import List
 
 import pandas as pd
+import math
 
 from src.config import Settings, settings as default_settings
 
@@ -55,15 +56,22 @@ class ProjetoAnalisado:
 
 def extrair_dados_financeiros(csv_path: Path) -> pd.DataFrame:
     """Lê o CSV financeiro (separador ';', exportado do GERP simulado)."""
-    df = pd.read_csv(csv_path, sep=";", encoding="utf-8-sig")
-    df.columns = [c.strip() for c in df.columns]
+    try:
+        raw = pd.read_csv(csv_path, sep=";", encoding="utf-8-sig", dtype=str, keep_default_na=False, header=None)
+    except pd.errors.EmptyDataError:
+        return pd.DataFrame()
+    df = raw.iloc[1:].reset_index(drop=True)
+    df.columns = [str(c).strip() for c in raw.iloc[0]]
     return df
 
 
 def extrair_dados_producao(xlsx_path: Path) -> pd.DataFrame:
     """Lê a planilha de produção física real."""
-    df = pd.read_excel(xlsx_path, sheet_name="Producao")
-    df.columns = [c.strip() for c in df.columns]
+    raw = pd.read_excel(xlsx_path, sheet_name="Producao", dtype=str, keep_default_na=False, header=None)
+    if raw.empty:
+        return pd.DataFrame()
+    df = raw.iloc[1:].reset_index(drop=True)
+    df.columns = [str(c).strip() for c in raw.iloc[0]]
     return df
 
 
@@ -81,6 +89,14 @@ def tratar_dados(df_financeiro: pd.DataFrame, df_producao: pd.DataFrame) -> tupl
     for col in ["Unidades_Planejadas", "Unidades_Produzidas"]:
         prod[col] = pd.to_numeric(prod[col], errors="coerce")
 
+    for raw in (df_financeiro, df_producao):
+        normalized = raw.copy()
+        normalized["Codigo_Projeto"] = normalized["Codigo_Projeto"].astype("string").str.strip()
+        distinct = normalized.drop_duplicates()
+        if distinct["Codigo_Projeto"].duplicated().any():
+            raise ValueError("Conflicting duplicates require explicit quality validation")
+    fin.attrs["identical_duplicates_removed"] = int(fin.duplicated().sum())
+    prod.attrs["identical_duplicates_removed"] = int(prod.duplicated().sum())
     fin = fin.drop_duplicates(subset=["Codigo_Projeto"])
     prod = prod.drop_duplicates(subset=["Codigo_Projeto"])
 
@@ -88,8 +104,8 @@ def tratar_dados(df_financeiro: pd.DataFrame, df_producao: pd.DataFrame) -> tupl
 
 
 def cruzar_dados(fin: pd.DataFrame, prod: pd.DataFrame) -> pd.DataFrame:
-    """Cruza financeiro x produção pela chave Codigo_Projeto (inner join)."""
-    cruzado = pd.merge(fin, prod, on="Codigo_Projeto", how="outer", indicator=True)
+    """Cruza financeiro x produção pela chave Codigo_Projeto (outer join)."""
+    cruzado = pd.merge(fin, prod, on="Codigo_Projeto", how="outer", indicator=True, validate="one_to_one")
     return cruzado
 
 
@@ -138,46 +154,27 @@ def analisar_e_identificar_divergencias(
     for _, row in df_cruzado.iterrows():
         codigo = row["Codigo_Projeto"]
 
-        if row.get("_merge") == "left_only":
-            resultados.append(
-                ProjetoAnalisado(
-                    codigo_projeto=codigo,
-                    faturamento_previsto=float(row.get("Faturamento_Previsto") or 0),
-                    custo_realizado=float(row.get("Custo_Realizado") or 0),
-                    horas_faturadas=float(row.get("Horas_Faturadas") or 0),
-                    status_financeiro=str(row.get("Status_Financeiro") or ""),
-                    unidades_planejadas=0.0,
-                    unidades_produzidas=0.0,
-                    status_producao="SEM_DADOS_PRODUCAO",
-                    desvio_financeiro_valor=0.0,
-                    desvio_financeiro_pct=0.0,
-                    desvio_producao_valor=0.0,
-                    desvio_producao_pct=0.0,
-                    classificacao="ATENCAO",
-                    motivo="Projeto presente no financeiro, mas sem registro correspondente na produção.",
-                )
-            )
-            continue
-
-        if row.get("_merge") == "right_only":
-            resultados.append(
-                ProjetoAnalisado(
-                    codigo_projeto=codigo,
-                    faturamento_previsto=0.0,
-                    custo_realizado=0.0,
-                    horas_faturadas=0.0,
-                    status_financeiro="SEM_DADOS_FINANCEIROS",
-                    unidades_planejadas=float(row.get("Unidades_Planejadas") or 0),
-                    unidades_produzidas=float(row.get("Unidades_Produzidas") or 0),
-                    status_producao=str(row.get("Status_Producao") or ""),
-                    desvio_financeiro_valor=0.0,
-                    desvio_financeiro_pct=0.0,
-                    desvio_producao_valor=0.0,
-                    desvio_producao_pct=0.0,
-                    classificacao="ATENCAO",
-                    motivo="Projeto presente na produção, mas sem registro correspondente no financeiro.",
-                )
-            )
+        numeric = ["Faturamento_Previsto", "Custo_Realizado", "Horas_Faturadas",
+                   "Unidades_Planejadas", "Unidades_Produzidas"]
+        def number(value):
+            try:
+                parsed = float(value)
+                return parsed if math.isfinite(parsed) else None
+            except (TypeError, ValueError):
+                return None
+        values = [number(row.get(c)) for c in numeric]
+        invalid = (row.get("_merge", "both") != "both" or any(v is None for v in values)
+                   or values[0] == 0 or values[3] == 0
+                   or pd.isna(row.get("Status_Producao")) or not str(row.get("Status_Producao", "")).strip())
+        if invalid:
+            resultados.append(ProjetoAnalisado(
+                codigo_projeto=codigo, faturamento_previsto=values[0], custo_realizado=values[1],
+                horas_faturadas=values[2], status_financeiro=str(row.get("Status_Financeiro", "")),
+                unidades_planejadas=values[3], unidades_produzidas=values[4],
+                status_producao=str(row.get("Status_Producao", "")),
+                desvio_financeiro_valor=None, desvio_financeiro_pct=None,
+                desvio_producao_valor=None, desvio_producao_pct=None,
+                classificacao="DADOS_INVALIDOS", motivo="Dados financeiros/produção inválidos ou sem correspondência; indicadores não calculados."))
             continue
 
         faturamento_previsto = float(row["Faturamento_Previsto"])

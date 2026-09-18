@@ -31,6 +31,7 @@ services:
     environment:
       - GERP_URL=http://gerp-fake:8000/web/gerp_fake.html
       - TZ=America/Manaus
+      - HEADLESS=true
       - DATA_DIR=/app/data
       - OUTPUT_DIR=/app/output
       - LOGS_DIR=/app/logs
@@ -40,6 +41,17 @@ services:
       - ./logs:/app/logs
     networks:
       - equipe04-net
+
+  dashboard:
+    build: .
+    profiles: [dashboard]
+    entrypoint: ["python", "-m", "streamlit", "run", "src/dashboard.py", "--server.address=0.0.0.0"]
+    ports:
+      - "127.0.0.1:8501:8501"
+    volumes:
+      - ./output:/app/output
+    environment:
+      - OUTPUT_DIR=/app/output
 
 networks:
   equipe04-net:

@@ -1,0 +1,8 @@
+{
+  "quality_mode": "partial",
+  "freshness_policy": "provisional",
+  "max_age_days": 14,
+  "rules_version": "finance-production-1",
+  "financial_threshold": 5,
+  "production_threshold": 5
+}

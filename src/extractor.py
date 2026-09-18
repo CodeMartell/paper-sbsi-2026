@@ -15,7 +15,10 @@ simulação de download dos dados".
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timedelta, timezone
+import re
 from pathlib import Path
+from src.provenance import digest, utcnow, write_json
 
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
@@ -37,7 +40,7 @@ def extrair_via_gerp_fake(
     log = logger or logging.getLogger("equipe04")
     destino = Path(cfg.data_dir) / cfg.financeiro_csv
 
-    log.info("Iniciando extração via GERP simulado: %s", cfg.gerp_url)
+    log.info("Iniciando extração via GERP simulado.")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=cfg.headless, slow_mo=0 if cfg.headless else 800)
@@ -56,13 +59,23 @@ def extrair_via_gerp_fake(
                 page.click("text=Exportar dados")
             download = download_info.value
 
-            download.save_as(str(destino))
-            log.info("Download simulado concluído: %s", destino)
+            temporary = destino.with_suffix(".download")
+            download.save_as(str(temporary))
+            temporary.replace(destino)
+            metadata = dict(sha256=digest(destino), obtained_at=utcnow())
+            period = re.search(r"(\d{4})-W(\d{2})", page.locator("#app p").inner_text())
+            if period:
+                start = datetime.fromisocalendar(int(period[1]), int(period[2]), 1).replace(tzinfo=timezone.utc)
+                metadata.update(reference_start=start.isoformat(),
+                                reference_end=(start + timedelta(days=7, microseconds=-1)).isoformat(),
+                                reference_basis="Período declarado na interface simulada; não verificado externamente")
+            write_json(Path(str(destino) + ".meta.json"), metadata)
+            log.info("Download simulado concluído.")
 
         except PlaywrightTimeoutError as exc:
-            log.error("Timeout ao interagir com o GERP simulado: %s", exc)
+            log.error("Timeout ao interagir com o GERP simulado.")
             raise ExtracaoGERPError(
-                f"Timeout ao interagir com o GERP simulado: {exc}"
+                "Timeout ao interagir com o GERP simulado."
             ) from exc
         finally:
             browser.close()
@@ -76,6 +89,10 @@ def extrair_via_gerp_fake(
 def extrair_com_fallback(
     cfg: Settings = default_settings, logger: logging.Logger | None = None
 ) -> Path:
+    return extract_source(cfg, logger)["path"]
+
+
+def extract_source(cfg: Settings = default_settings, logger=None) -> dict:
     """Tenta extrair via automação web protegida por Circuit Breaker; em
     caso de falha (ou circuito aberto), cai para o CSV já fornecido
     localmente (fail-safe), registrando o ocorrido no log.
@@ -105,12 +122,12 @@ def extrair_com_fallback(
         try:
             caminho = extrair_via_gerp_fake(cfg, log)
             breaker.record_success()
-            return caminho
+            return dict(path=caminho, mode="current_extraction")
         except Exception as exc:  # noqa: BLE001
             breaker.record_failure()
             log.warning(
                 "Extração automatizada via GERP falhou (%s). Utilizando arquivo local já disponível como contingência.",
-                exc,
+                type(exc).__name__,
             )
     else:
         log.info(
@@ -121,4 +138,4 @@ def extrair_com_fallback(
         raise ExtracaoGERPError(
             "Extração via GERP falhou (ou circuito aberto) e não há arquivo local de contingência disponível."
         )
-    return caminho_local
+    return dict(path=caminho_local, mode="contingency")

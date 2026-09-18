@@ -8,3 +8,7 @@ logs/*
 !logs/.gitkeep
 .DS_Store
 venv/
+
+.venv/
+data/*.meta.json
+data/*.download

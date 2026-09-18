@@ -1,119 +1,88 @@
+# Evolução do protótipo de relatórios administrativos
 
-# Equipe 04 — Automação do Processo de Relatórios Administrativos
+Automação local em Python: extração do GERP simulado → preservação de entradas → validação → cruzamento → regras financeiras/produção → relatório textual e JSON → conferência e revisão humana no Streamlit.
 
-Avaliação 03 — Técnicas de Hyperautomation (Professor Moisés Levy).
+O projeto é um protótipo para investigação. Resultados sintéticos não demonstram impacto empresarial nem reutilização nos outros projetos dos autores. Nenhum significado de ECOs foi presumido.
 
-Robô que executa o processo  **Extrair → Tratar → Cruzar → Analisar →
-Identificar divergências → Gerar relatório** , cruzando dados financeiros
-(GERP simulado) com dados de produção física real, para gerar o relatório
-executivo semanal da diretoria.
+## Instalar e demonstrar
 
-## Arquitetura
+Python **3.12** (mesma versão do CI). No PowerShell, na raiz do projeto:
 
-```
-equipe04-relatorios-administrativos/
-├── src/
-│   ├── config.py            # variáveis de ambiente / configuração
-│   ├── logger.py            # logging estruturado + alertas críticos
-│   ├── extractor.py         # automação web (Playwright) no GERP simulado
-│   ├── circuit_breaker.py   # circuit breaker (protege contra falhas repetidas no GERP)
-│   ├── data_processor.py    # tratar / cruzar / analisar / classificar
-│   ├── report_generator.py  # preenchimento do modelo de relatório
-│   └── main.py               # orquestrador do pipeline
-├── tests/                    # testes pytest
-├── .github/workflows/ci.yml  # pipeline CI/CD (testes + build Docker)
-├── gerp_fake_server/          # "sistema GERP" simulado, servido via HTTP
-├── data/                      # entrada: CSV, XLSX e modelo do relatório (volume)
-├── output/                    # saída: relatórios e JSON de auditoria (volume)
-├── logs/                      # execução + alertas (volume)
-├── docs/DEFESA_TECNICA.md     # respostas às 6 perguntas da defesa técnica
-├── Dockerfile
-├── docker-compose.yml
-└── .env.example
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+python -m src.main --local
+python -m streamlit run src/dashboard.py
 ```
 
-## Como rodar (Docker — forma recomendada)
+Abra `http://127.0.0.1:8501`. O comando `--local` usa explicitamente o financeiro local como contingência. Os dados originais da demonstração são antigos e o financeiro local não possui evidência temporal; é esperado um resultado **PROVISIONAL**, não uma afirmação de atualidade. Consulte fontes, problemas e valores, selecione uma ocorrência e registre uma justificativa com responsável autodeclarado. O resultado automático continua preservado.
 
-```bash
-cp .env.example .env
-docker compose up --build
-```
+Para extração pelo navegador:
 
-O `docker compose` sobe dois serviços:
-
-* **gerp-fake** : serve `gerp_fake_server/web/gerp_fake.html` (o "GERP" simulado) e o
-  CSV de faturamento em `http://localhost:8000`.
-* **robo-relatorios** : aguarda o `gerp-fake` ficar saudável, executa o robô
-  (login → download → cruzamento → análise → relatório) e encerra. Os
-  arquivos gerados aparecem em `./output` e `./logs` no host.
-
-Para rodar novamente sem rebuild: `docker compose up`.
-
-## Como rodar localmente (sem Docker)
-
-```bash
-pip install -r requirements.txt
+```powershell
 python -m playwright install chromium
-cp .env.example .env   # ajuste GERP_URL para onde você servir o gerp_fake.html localmente
-cd gerp_fake_server && python -m http.server 8000   # em um terminal separado
+python -m http.server 8000 --bind 127.0.0.1 --directory gerp_fake_server
+# Em outro terminal, com o ambiente virtual ativo:
 python -m src.main
 ```
 
-### Ver a automação acontecendo (navegador visível)
+A URL padrão é `http://localhost:8000/web/gerp_fake.html`. A interface declara o período **2026-W34**; baixá-lo hoje não o torna atual. Credenciais e caminhos ficam no `.env`; não são exportados ao manifesto. `HEADLESS=false` permite ver a automação local.
 
-Por padrão o Playwright roda em modo **headless** (sem interface, invisível) —
-necessário para funcionar no Docker/CI, que não têm tela. Para acompanhar
-visualmente o robô fazendo login e clicando em "Exportar dados" no GERP
-simulado, adicione ao seu `.env` local:
+## Execuções preservadas e replay
 
-```
-HEADLESS=false
-```
+Cada execução cria `output/runs/<timestamp_UUID>/` com:
 
-Com isso, ao rodar `python -m src.main` uma janela do Chromium abre e mostra
-cada passo (com uma pequena pausa entre ações, via `slow_mo`, para dar tempo
-de acompanhar). **Não defina essa variável no Docker/CI** — lá não há tela
-disponível, e o `docker-compose.yml` já mantém o padrão `HEADLESS=true`
-(invisível) independentemente do que estiver no seu `.env` local.
+- `inputs/`: cópias binárias das entradas e do modelo textual;
+- `policy.json`: política efetivamente usada, sem credenciais;
+- `result.json`: estado, fontes, qualidade, decisões por linha e análise operacional;
+- `manifest.json`: horários e duração das etapas, hashes, versão Git, indicação de alterações locais, hashes do código e versões de dependências;
+- `relatorio.txt`: modelo textual existente acrescido de estado e limitações;
+- `reviews.sqlite`: criado apenas ao registrar a primeira revisão, separado dos resultados.
 
-## Testes
-
-```bash
-pip install pytest
-pytest tests/ -v
+```powershell
+python -m src.main --replay output/runs/ID_DA_EXECUCAO
+python -m src.main --local --policy config/policy.json
 ```
 
-Os testes cobrem leitura dos dados, cruzamento, cálculo de desvios,
-identificação de divergências (incluindo o caso crítico `PROJ_REF_02`) e
-geração do relatório.
+Replay verifica hashes das entradas e do modelo, usa a política preservada e gera **outro ID**, sem nova extração. A atualidade é reavaliada na data do replay. O código executado é o código instalado naquele momento e fica identificado no novo manifesto; para repetir exatamente uma versão, é necessário também restaurar código/dependências correspondentes. Política alternativa no replay é permitida e registrada na nova execução.
 
-## Regras de negócio (resumo)
+Saída de processo: `0` para concluído/provisório, `1` para bloqueado/falha. **Código 0 não significa dados atuais**: consumidores devem ler `state`, `provisional` e `publication_allowed`. “Publicação” aqui significa liberação local de conclusões; não existe envio externo.
 
-* **Desvio financeiro** = Custo Realizado − Faturamento Previsto (em R$ e %).
-* **Desvio de produção** = Unidades Planejadas − Unidades Produzidas (em un. e %).
-* **Crítico** : custo acima do previsto **e** status de produção diferente de
-  "Normal" (caso do `PROJ_REF_02`).
-* **Atenção** : desvio financeiro ou de produção acima do limiar configurado
-  (padrão 5%, ajustável via `.env`), ou dados incompletos entre as duas fontes.
-* **Normal** : dentro dos limiares esperados.
+## Política e regras
 
-## Resiliência: Fallback + Circuit Breaker
+Edite `config/policy.json`: `quality_mode` (`partial` ou `block`), `freshness_policy` (`provisional` ou `block`), `max_age_days` e os dois limiares percentuais. Sem `--policy`, os limiares do `.env` continuam tendo precedência para preservar o fluxo antigo. Com `--policy`, o JSON é a referência. `rules_version` identifica a implementação, não é um rótulo arbitrário.
 
-Se a extração automatizada via GERP falhar, o robô usa o CSV local já
-existente como contingência ( **fallback** ). Além disso, um **circuit
-breaker** (`src/circuit_breaker.py`) evita tentativas repetidas contra um
-sistema indisponível: após 3 falhas consecutivas o circuito abre por 60s
-(nesse período o robô vai direto para o fallback); passado o cooldown, uma
-tentativa de teste é permitida antes de fechar o circuito de novo.
+As fórmulas existentes foram mantidas: `(custo - faturamento previsto)/faturamento previsto*100` e `(planejado - produzido)/planejado*100`. Custo superior ao previsto com status de produção não normal é CRITICO; desvio desfavorável **maior ou igual** ao limiar ou status atípico é ATENCAO. Os demais registros válidos são NORMAL. Dados inválidos ficam fora dessas classificações.
 
-## CI/CD
+Detalhes, ambiguidades de negócio e pontos de extensão: [arquitetura e políticas](docs/ARQUITETURA_POLITICAS.md).
 
-`.github/workflows/ci.yml` roda os testes automaticamente em todo
-push/PR para `main`, `develop`, `feature/**` e `release/**`, e valida que
-a imagem Docker builda corretamente antes de qualquer merge.
+## Testes e experimentos
 
-Detalhes completos das respostas de defesa técnica em
-[`docs/DEFESA_TECNICA.md`](https://claude.ai/chat/docs/DEFESA_TECNICA.md),
-[`docs/DEFESA_TECNICA_EQUIPE.md`](https://claude.ai/chat/docs/DEFESA_TECNICA_EQUIPE.md) (por
-responsável) e [`docs/REVISAO_AVALIACAO03.md`](https://claude.ai/chat/docs/REVISAO_AVALIACAO03.md)
-(checklist de revisão do professor).
+```powershell
+python -m pytest tests -q
+python -m src.experiments --repetitions 3
+```
+
+Em ambientes com restrição ao diretório temporário, use um diretório **novo** do projeto: `python -m pytest -q --basetemp=output/pytest-NOVO_ID`. O pytest limpa seu `basetemp`; não aponte para entradas ou evidências.
+
+O experimento gera dez cenários sintéticos, protocolo e oráculo antes da execução, entradas, manifestos, métricas JSON/CSV e repetições isoladas em `output/experiments/<UUID>`. A indisponibilidade é injetada na fronteira de aquisição, executando o fallback/circuit breaker reais; não representa uma medição de latência de rede empresarial. Os testes verificam o software; o experimento caracteriza somente os cenários definidos. Veja [protocolo experimental](docs/PROTOCOLO_EXPERIMENTAL.md) e [verificação efetivamente realizada](docs/VERIFICACAO.md).
+
+Para consultar uma execução experimental no dashboard, defina `OUTPUT_DIR` no terminal como o diretório do cenário que contém `runs`, antes de iniciar o Streamlit.
+
+## Docker
+
+```powershell
+Copy-Item .env.example .env
+docker compose up --build gerp-fake robo-relatorios
+docker compose --profile dashboard up --build dashboard
+```
+
+O dashboard fica vinculado a `127.0.0.1:8501`. O robô usa Chromium headless e os volumes locais `data`, `output` e `logs`. Para replay: `docker compose run --rm robo-relatorios --replay /app/output/runs/ID`. Garanta permissão de escrita dos volumes para o usuário `robo` (também para `reviews.sqlite`). A imagem mantém a base Playwright original e acrescenta a configuração e Streamlit.
+
+## Referência original e limites
+
+A referência original está em [BASELINE.json](docs/BASELINE.json), commit `7e1768daf5d4081450ee5d6e904c8c0d3a5a983d`; o histórico foi preservado. A pasta local estava vazia, com Git sem commits; o código foi obtido do remoto informado. A inspeção confirmou Playwright, pandas, fallback, circuit breaker, testes e relatório; não encontrou validação explícita, controle temporal, dashboard ou histórico de revisões. Documentos antigos em `docs/` descrevem a atividade original e não são evidência das novas capacidades.
+
+Revisões são locais, sem autenticação, assinatura digital ou proteção contra edição dos arquivos por seu proprietário. Hashes detectam alterações quando comparados com o manifesto preservado, mas não garantem origem autêntica nem inviolabilidade. O armazenamento inclui dados de entrada: controle acesso e retenção conforme o contexto. A extração/circuit breaker pressupõe um escritor por diretório de dados; o histórico SQLite suporta transações locais. Não foi implementado agendador, ML, nuvem, e-mail ou serviço pago.

@@ -14,6 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 COPY data/ ./data/
+COPY config/ ./config/
+COPY .streamlit/ ./.streamlit/
 
 # /app/output e /app/logs são preenchidos via volumes (mas garantimos que existam)
 RUN mkdir -p /app/output /app/logs \

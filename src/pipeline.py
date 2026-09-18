@@ -174,6 +174,8 @@ def execute(cfg=defaults, policy_path=None, local=False, replay=None, source_pro
             report = folder / "relatorio.txt"
             if blocked:
                 body = "PUBLICAÇÃO BLOQUEADA. Nenhuma conclusão operacional liberada."
+            elif hasattr(process, "render_report"):
+                body = process.render_report(projects, report, run_id, manifest["sources"])
             else:
                 periods = "; ".join(f"{name}: {s['metadata'].get('reference_start', '?')} a {s['metadata'].get('reference_end', '?')}" for name, s in manifest["sources"].items())
                 gerar_relatorio(folder / "inputs/template.txt", projects, report, tz=cfg.tz, reference_period=periods)

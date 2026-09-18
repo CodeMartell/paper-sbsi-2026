@@ -90,8 +90,9 @@ def run_experiments(output="output/experiments", repetitions=1):
     write_json(root / "policy.json", policy)
     metrics = []
     for repetition in range(repetitions):
-        for scenario, (state, expected_issues, excluded, contingency) in SCENARIOS.items():
-            case = root / f"{repetition+1}_{scenario}"
+        for scenario_index, (scenario, (state, expected_issues, excluded, contingency)) in enumerate(SCENARIOS.items(), start=1):
+            # Keep evidence paths portable to Windows paths used by test runners.
+            case = root / f"r{repetition+1}_{scenario_index}"
             cfg = replace(prepare(case / "data", scenario), output_dir=case)
             if contingency:
                 # Injection only at external acquisition boundary; real fallback/breaker execute.

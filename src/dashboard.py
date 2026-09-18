@@ -60,7 +60,8 @@ def main():
     filtered = [p for p in operational if not classes or p["classificacao"] in classes]
     st.dataframe(pd.DataFrame(filtered), use_container_width=True)
     if filtered:
-        item = st.selectbox("Detalhar registro e valores utilizados", filtered, format_func=lambda p: p["codigo_projeto"])
+        item = st.selectbox("Detalhar registro e valores utilizados", filtered,
+                            format_func=lambda p: p.get("codigo_projeto", p.get("identifier", p["id"])))
         st.write(item["motivo"])
         with st.expander("Valores e indicadores do registro"):
             st.json(item)
@@ -81,7 +82,8 @@ def main():
     latest = {r["occurrence_id"]: r["state"] for r in reviews}
     occurrences = quality + [p for p in operational if p["classificacao"] != "NORMAL"]
     if occurrences:
-        occurrence = st.selectbox("Ocorrência", occurrences, format_func=lambda p: f"{p['id']} — {latest.get(p['id'], 'pendente')} — {p.get('type', p.get('codigo_projeto'))}")
+        occurrence = st.selectbox("Ocorrência", occurrences,
+            format_func=lambda p: f"{p['id']} — {latest.get(p['id'], 'pendente')} — {p.get('type', p.get('codigo_projeto', p.get('identifier')))}")
         with st.form("review"):
             state = st.selectbox("Decisão humana", ["pendente", "confirmada", "descartada"])
             reviewer = st.text_input("Responsável autodeclarado")

@@ -63,11 +63,14 @@ Detalhes, ambiguidades de negócio e pontos de extensão: [arquitetura e políti
 ```powershell
 python -m pytest tests -q
 python -m src.experiments --repetitions 3
+python -m src.research_evaluation --repetitions 3
 ```
 
 Em ambientes com restrição ao diretório temporário, use um diretório **novo** do projeto: `python -m pytest -q --basetemp=output/pytest-NOVO_ID`. O pytest limpa seu `basetemp`; não aponte para entradas ou evidências.
 
 O experimento gera dez cenários sintéticos, protocolo e oráculo antes da execução, entradas, manifestos, métricas JSON/CSV e repetições isoladas em `output/experiments/<UUID>`. A indisponibilidade é injetada na fronteira de aquisição, executando o fallback/circuit breaker reais; não representa uma medição de latência de rede empresarial. Os testes verificam o software; o experimento caracteriza somente os cenários definidos. Veja [protocolo experimental](docs/PROTOCOLO_EXPERIMENTAL.md) e [verificação efetivamente realizada](docs/VERIFICACAO.md).
+
+Para a avaliação de pesquisa, o segundo comando executa três instanciações sintéticas e compara a baseline histórica com a versão aprimorada no fluxo financeiro/produção. Veja [avaliação multiprocesso](docs/AVALIACAO_MULTIPROCESSO.md), [revisão inicial](docs/REVISAO_LITERATURA_INICIAL.md) e [rascunho do artigo](docs/ARTIGO_SBSI_RASCUNHO.md). Os dois novos cenários não representam requisitos de sourcing, materiais ou ECOs reais.
 
 Para consultar uma execução experimental no dashboard, defina `OUTPUT_DIR` no terminal como o diretório do cenário que contém `runs`, antes de iniciar o Streamlit.
 
